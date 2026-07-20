@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.static.hashPassword = function (plain) {
+userSchema.statics.hashPassword = function (plain) {
   return bcrypt.hash(plain, 12);
 };
 

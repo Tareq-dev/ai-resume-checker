@@ -1,7 +1,7 @@
 const ApiError = require("../utils/ApiError");
 
 const validate =
-  (schema, souce = "body") =>
+  (schema, source = "body") =>
   (req, res, next) => {
     const result = schema.safeParse(req[source]);
     if (!result.success) {

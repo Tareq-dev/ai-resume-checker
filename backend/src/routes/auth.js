@@ -31,7 +31,7 @@ const passwordSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 
-const issueSession = (req, user) => {
+const issueSession = (res, user) => {
   const token = signToken({ sub: user._id.toString() });
   res.cookie(env.config.cookieName, token, cookieOptions);
 };
@@ -41,10 +41,11 @@ router.post(
   authLimiter,
   validate(registerSchema),
 
-  asyncHandler(async (res, req) => {
+  asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
     const existing = await User.findOne({ email });
-    if (!existing) throw ApiError.conflict("Email already registered");
+
+    if (existing) throw ApiError.conflict("Email already registered");
 
     const passwordHash = await User.hashPassword(password);
     const user = await User.create({ name, email, passwordHash });
@@ -58,8 +59,9 @@ router.post(
   "/login",
   authLimiter,
   validate(loginSchema),
-  asyncHandler(async (res, req) => {
+  asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+
     const user = await User.findOne({ email }).select("+passwordHash");
     if (!user) throw ApiError.unauthorized("Invalid Credentials");
 
@@ -71,7 +73,7 @@ router.post(
   }),
 );
 
-router.post("/logout", (res, req) => {
+router.post("/logout", (req, res) => {
   res.clearCookie(env.config.cookieName, { ...cookieOptions, maxAge: 0 });
   res.json({ ok: true });
 });
