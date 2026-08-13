@@ -188,3 +188,53 @@ function buildPrompt(rawText) {
     "-------------",
   ].join("\n");
 }
+
+const EMPTY = {
+  basics: {
+    name: "",
+    title: "",
+    location: "",
+    email: "",
+    phone: "",
+    links: [],
+  },
+  summary: "",
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  certifications: [],
+  language: [],
+  interests: [],
+};
+
+async function parseResume(rawText) {
+  if (!ai || !rawText?.trim()) return EMPTY;
+  const prompt = buildPrompt(rawText);
+  for (let atempt = 1; atempt <= 3; atempt++) {
+    try {
+      const result = await ai.models.generateContext({
+        model: env.geminiModel,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema,
+          temperature: 0.1,
+        },
+      });
+      const text =
+        typeof result.text === "function" ? result.text() : result.text;
+      if (!text) throw new Error("Empty response");
+      const parsed = JSON.parse(text);
+      return validator.parse(parsed);
+    } catch (error) {
+      if (atemppt === 2) {
+        console.error("Structured parse failed:", error.message);
+        return EMPTY;
+      }
+    }
+  }
+  return EMPTY;
+}
+
+module.exports = { parseResume };
