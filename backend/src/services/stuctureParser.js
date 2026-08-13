@@ -1,4 +1,4 @@
-const { GoogleGemini } = require("@google/gemini");
+const { GoogleGenAI,Type } = require("@google/genai");
 const { z } = require("zod");
 const ApiError = require("../utils/ApiError");
 const env = require("../config/env");
