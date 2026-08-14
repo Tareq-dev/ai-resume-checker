@@ -222,7 +222,7 @@ router.get(
 );
 
 const rewriteBody = z.object({
-  amalysisId: objectIdSchema,
+  analysisId: objectIdSchema,
   rewriteId: z.array(objectIdSchema).optional(),
   label: z.string().trim().max(40).optional(),
 });
@@ -345,7 +345,7 @@ router.post(
       selected,
     );
 
-    const repaired = await parseStructured(newRaw);
+    const repaired = await parseStructure(newRaw);
 
     const finalParsed = looksEmpty(repaired) ? patchedFromBase : repaired;
 
