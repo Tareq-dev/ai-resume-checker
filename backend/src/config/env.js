@@ -50,6 +50,9 @@ const path = require("path");
 dotenv.config({
   path: path.resolve(__dirname, "../../.env"),
 });
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 const config = {
   nodeEnv: process.env.NODE_ENV || "development",
@@ -65,10 +68,11 @@ const config = {
   cookieName: process.env.COOKIE_NAME || "arr_token",
 
   clientOrigins: (
-    process.env.CLIENT_ORIGIN || "http://localhost:5173,http://localhost:5174"
+    process.env.CLIENT_ORIGIN ||
+    "https://ai-resume-checker-trk.vercel.app/,http://localhost:5173,http://localhost:5174"
   )
     .split(",")
-    .map((origin) => origin.trim())
+    .map((o) => o.trim())
     .filter(Boolean),
 
   geminiApiKey: process.env.GEMINI_API_KEY || "",

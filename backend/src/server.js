@@ -184,7 +184,15 @@ app.use("/api/insights", insightsRouter);
 app.use("/api/versions", versionsRouter);
 
 app.use("/api/history", historyRouter);
-
+console.log({
+  healthRouter: typeof healthRouter,
+  authRouter: typeof authRouter,
+  resumesRouter: typeof resumesRouter,
+  dashboardRouter: typeof dashboardRouter,
+  insightsRouter: typeof insightsRouter,
+  versionsRouter: typeof versionsRouter,
+  historyRouter: typeof historyRouter,
+});
 /*
   404
 */
