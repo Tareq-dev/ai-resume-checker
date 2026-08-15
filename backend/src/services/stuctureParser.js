@@ -348,12 +348,116 @@ const validator = z.object({
     )
     .default([]),
 });
+function getUrls(extractedLinks = []) {
+  return extractedLinks
+    .map((item) => {
+      if (typeof item === "string") {
+        return item.trim();
+      }
 
-function buildPrompt(rawText) {
+      return (item?.url || "").trim();
+    })
+    .filter(Boolean);
+}
+
+function upsertBasicLink(links, label, url) {
+  if (!url) return;
+
+  const found = links.find(
+    (item) => item.label?.toLowerCase().trim() === label.toLowerCase(),
+  );
+
+  if (found) {
+    if (!found.url) {
+      found.url = url;
+    }
+
+    return;
+  }
+
+  links.push({
+    label,
+    url,
+  });
+}
+
+function enrichParsedLinks(parsed, extractedLinks = []) {
+  if (!parsed?.basics) {
+    return parsed;
+  }
+
+  parsed.basics.links = parsed.basics.links || [];
+
+  const urls = getUrls(extractedLinks);
+
+  const githubUrl = urls.find((url) => /github\.com/i.test(url));
+
+  const linkedinUrl = urls.find((url) => /linkedin\.com/i.test(url));
+
+  upsertBasicLink(parsed.basics.links, "GitHub", githubUrl);
+
+  upsertBasicLink(parsed.basics.links, "LinkedIn", linkedinUrl);
+
+  /*
+    Fill project links that Gemini missed.
+    We don't guess project ownership here;
+    we only try a conservative hostname/name match.
+  */
+  for (const project of parsed.projects || []) {
+    project.links = project.links || [];
+
+    if (project.links.some((link) => link.url)) {
+      continue;
+    }
+
+    const projectName = (project.name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+
+    const candidate = urls.find((url) => {
+      if (/github\.com|linkedin\.com/i.test(url)) {
+        return false;
+      }
+
+      const normalizedUrl = url.toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+      const words = (project.name || "")
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((word) => word.length >= 4);
+
+      return words.some((word) => normalizedUrl.includes(word));
+    });
+
+    if (candidate) {
+      project.links.push({
+        label: "Live Link",
+        url: candidate,
+      });
+    }
+  }
+
+  return parsed;
+}
+function buildPrompt(rawText, extractedLinks = []) {
   return [
     "You are a resume parser.",
     "The input is raw text extracted from a PDF, so some lines may be broken or slightly out of order.",
-
+    "",
+    "PDF EMBEDDED LINKS:",
+    "These URLs were extracted from clickable hyperlinks embedded in the original PDF.",
+    "Use them when matching GitHub, LinkedIn, Portfolio, project live links, credentials, and other links.",
+    "Do not invent URLs.",
+    "Do not discard extracted URLs.",
+    "",
+    JSON.stringify(extractedLinks, null, 2),
+    "",
+    "LINK MATCHING RULES:",
+    "- A URL containing github.com should normally be matched to GitHub.",
+    "- A URL containing linkedin.com should normally be matched to LinkedIn.",
+    "- Portfolio/personal website URLs should be matched to Portfolio or Website.",
+    "- Project deployment URLs such as vercel.app, netlify.app, web.app, or similar should be assigned to the relevant project when context allows.",
+    "- Preserve all project links that clearly belong to projects.",
     "",
 
     "Extract the resume into the exact structured JSON schema provided.",
@@ -488,7 +592,7 @@ const EMPTY = {
   extraSections: [],
 };
 
-async function parseResume(rawText) {
+async function parseResume(rawText, extractedLinks = []) {
   if (!rawText?.trim()) {
     return EMPTY;
   }
@@ -499,7 +603,7 @@ async function parseResume(rawText) {
     return EMPTY;
   }
 
-  const prompt = buildPrompt(rawText);
+  const prompt = buildPrompt(rawText, extractedLinks);
 
   let lastError;
 
@@ -537,7 +641,9 @@ async function parseResume(rawText) {
 
       const parsed = JSON.parse(text);
 
-      return validator.parse(parsed);
+      const validated = validator.parse(parsed);
+
+      return enrichParsedLinks(validated, extractedLinks);
     } catch (error) {
       lastError = error;
 

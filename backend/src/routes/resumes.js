@@ -61,10 +61,11 @@ router.post(
   "/",
   uploadPdf("file"),
   asyncHandler(async (req, res) => {
-    const { text, meta } = await extractText(req.file.buffer);
+    const { text, links, meta } = await extractText(req.file.buffer);
+
+    console.log("PDF LINKS:", JSON.stringify(links, null, 2));
 
     const parsedSections = await parseStructure(text);
-
     const title =
       (req.body.title || "").trim() ||
       req.file.originalname.replace(/\.pdf$/i, "") ||
@@ -387,8 +388,6 @@ router.post(
       selected,
     );
     const nextNumber = resume.latestVersionNumber + 1;
-
-    
 
     const newVersion = await ResumeVersion.create({
       resumeId: resume._id,
