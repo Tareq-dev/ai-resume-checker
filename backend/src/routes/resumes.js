@@ -280,13 +280,25 @@ function patchBulletsInSections(sections, rewrites) {
   const cloned = JSON.parse(JSON.stringify(sections));
 
   for (const r of rewrites) {
-    if (!r?.original || !r?.rewritten) continue;
+    if (!r?.original || !r?.rewritten) {
+      continue;
+    }
 
+    // EXPERIENCE
     for (const exp of cloned.experience || []) {
       if (!Array.isArray(exp.bullets)) continue;
 
-      exp.bullets = exp.bullets.map((b) =>
-        b === r.original ? r.rewritten : b,
+      exp.bullets = exp.bullets.map((bullet) =>
+        bullet.trim() === r.original.trim() ? r.rewritten : bullet,
+      );
+    }
+
+    // PROJECTS
+    for (const project of cloned.projects || []) {
+      if (!Array.isArray(project.bullets)) continue;
+
+      project.bullets = project.bullets.map((bullet) =>
+        bullet.trim() === r.original.trim() ? r.rewritten : bullet,
       );
     }
   }
@@ -294,21 +306,43 @@ function patchBulletsInSections(sections, rewrites) {
   return cloned;
 }
 
+// function looksEmpty(sections) {
+//   if (!sections) return true;
+
+//   const b = sections.basics || {};
+//   const hasIdentity = b.name || b.email || b.title;
+
+//   const hasBody =
+//     sections.summary ||
+//     sections.experience?.length ||
+//     sections.education?.length ||
+//     sections.skills?.length;
+
+//   return !hasIdentity && !hasBody;
+// }
 function looksEmpty(sections) {
   if (!sections) return true;
 
   const b = sections.basics || {};
-  const hasIdentity = b.name || b.email || b.title;
 
-  const hasBody =
+  const hasIdentity = Boolean(
+    b.name || b.email || b.phone || b.title || b.location,
+  );
+
+  const hasBody = Boolean(
     sections.summary ||
     sections.experience?.length ||
     sections.education?.length ||
-    sections.skills?.length;
+    sections.skills?.length ||
+    sections.projects?.length ||
+    sections.certifications?.length ||
+    sections.languages?.length ||
+    sections.interests?.length ||
+    sections.extraSections?.length,
+  );
 
   return !hasIdentity && !hasBody;
 }
-
 router.post(
   "/:id/rewrite",
   validate(idParam, "params"),
@@ -335,8 +369,6 @@ router.post(
       throw ApiError.badRequest("No rewrites selected to apply");
     }
 
-    const newRaw = applyRewritesToText(baseVersion.rawText, selected);
-
     // Safety net: pre-build a structured copy from the base version
     // with the chosen bullets swapped in, so V2 never lands with empty
     // sections even if Gemini's re-parse fails.
@@ -344,12 +376,19 @@ router.post(
       baseVersion.parsedSections,
       selected,
     );
+    const newRaw = applyRewritesToText(baseVersion.rawText, selected);
 
     const repaired = await parseStructure(newRaw);
 
-    const finalParsed = looksEmpty(repaired) ? patchedFromBase : repaired;
+    // const finalParsed = looksEmpty(repaired) ? patchedFromBase : repaired;
 
+    const finalParsed = patchBulletsInSections(
+      baseVersion.parsedSections,
+      selected,
+    );
     const nextNumber = resume.latestVersionNumber + 1;
+
+    
 
     const newVersion = await ResumeVersion.create({
       resumeId: resume._id,

@@ -3,7 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
 import { ArrowLeft, Download, FileText, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -25,7 +30,9 @@ export default function Export() {
   const [activeVersionId, setActiveVersionId] = useState(null);
   useEffect(() => {
     if (!activeVersionId && versions.length) {
-      setActiveVersionId(resume?.currentVersionId || versions[versions.length - 1]._id);
+      setActiveVersionId(
+        resume?.currentVersionId || versions[versions.length - 1]._id,
+      );
     }
   }, [versions, resume, activeVersionId]);
 
@@ -34,11 +41,14 @@ export default function Export() {
 
   const docProps = useMemo(
     () => ({ user, version, title: resume?.title }),
-    [user, version, resume?.title]
+    [user, version, resume?.title],
   );
 
   const fileName = useMemo(() => {
-    const base = (resume?.title || "resume").replace(/[^a-z0-9\-_ ]/gi, "").trim().replace(/\s+/g, "_");
+    const base = (resume?.title || "resume")
+      .replace(/[^a-z0-9\-_ ]/gi, "")
+      .trim()
+      .replace(/\s+/g, "_");
     return `${base}_${version?.label || "V1"}.pdf`;
   }, [resume?.title, version?.label]);
 
@@ -66,6 +76,7 @@ export default function Export() {
     );
   }
 
+  console.log(JSON.stringify(version?.parsedSections.projects, null, 2));
   return (
     <div className="space-y-6">
       <PageHeader
@@ -103,7 +114,8 @@ export default function Export() {
                   <Button variant="accent" size="md" disabled={loading}>
                     {loading ? (
                       <>
-                        <Loader2 size={14} className="animate-spin" /> Preparing…
+                        <Loader2 size={14} className="animate-spin" />{" "}
+                        Preparing…
                       </>
                     ) : (
                       <>
@@ -125,9 +137,7 @@ export default function Export() {
         )}
       </Card>
 
-      {fullVersion.isLoading && (
-        <Skeleton className="h-[800px] rounded-3xl" />
-      )}
+      {fullVersion.isLoading && <Skeleton className="h-[800px] rounded-3xl" />}
 
       {fullVersion.error && (
         <EmptyState

@@ -2,61 +2,174 @@ const mongoose = require("mongoose");
 
 const linkSchema = new mongoose.Schema(
   {
-    label: String,
-    url: String,
+    label: {
+      type: String,
+      default: "",
+    },
+    url: {
+      type: String,
+      default: "",
+    },
   },
   { _id: false },
 );
 
 const basicsSchema = new mongoose.Schema(
   {
-    name: String,
-    title: String,
-    location: String,
-    email: String,
-    phone: String,
-    links: [linkSchema],
+    name: {
+      type: String,
+      default: "",
+    },
+
+    title: {
+      type: String,
+      default: "",
+    },
+
+    location: {
+      type: String,
+      default: "",
+    },
+
+    email: {
+      type: String,
+      default: "",
+    },
+
+    phone: {
+      type: String,
+      default: "",
+    },
+
+    links: {
+      type: [linkSchema],
+      default: [],
+    },
   },
   { _id: false },
 );
 
-const experienceSchema = new mongoose.Schema(
+const experienceItemSchema = new mongoose.Schema(
   {
-    company: String,
-    role: String,
-    location: String,
-    period: String,
-    bullets: [String],
+    company: {
+      type: String,
+      default: "",
+    },
+
+    role: {
+      type: String,
+      default: "",
+    },
+
+    period: {
+      type: String,
+      default: "",
+    },
+
+    location: {
+      type: String,
+      default: "",
+    },
+
+    bullets: {
+      type: [String],
+      default: [],
+    },
   },
   { _id: false },
 );
 
-const educationSchema = new mongoose.Schema(
+const educationItemSchema = new mongoose.Schema(
   {
-    degree: String,
-    school: String,
-    location: String,
-    period: String,
-    details: String,
+    degree: {
+      type: String,
+      default: "",
+    },
+
+    school: {
+      type: String,
+      default: "",
+    },
+
+    period: {
+      type: String,
+      default: "",
+    },
+
+    location: {
+      type: String,
+      default: "",
+    },
+
+    details: {
+      type: String,
+      default: "",
+    },
   },
   { _id: false },
 );
 
 const projectItemSchema = new mongoose.Schema(
   {
-    name: String,
-    description: String,
-    tags: [String],
-    link: [linkSchema],
+    name: {
+      type: String,
+      default: "",
+    },
+
+    description: {
+      type: String,
+      default: "",
+    },
+
+    tech: {
+      type: [String],
+      default: [],
+    },
+
+    links: {
+      type: [linkSchema],
+      default: [],
+    },
+
+    bullets: {
+      type: [String],
+      default: [],
+    },
   },
   { _id: false },
 );
 
 const certificationItemSchema = new mongoose.Schema(
   {
-    name: String,
-    issuer: String,
-    year: String,
+    name: {
+      type: String,
+      default: "",
+    },
+
+    issuer: {
+      type: String,
+      default: "",
+    },
+
+    year: {
+      type: String,
+      default: "",
+    },
+  },
+  { _id: false },
+);
+
+const extraSectionSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      default: "",
+    },
+
+    items: {
+      type: [String],
+      default: [],
+    },
   },
   { _id: false },
 );
@@ -68,23 +181,18 @@ const parsedSectionsSchema = new mongoose.Schema(
       default: () => ({}),
     },
 
-    define: {
-      type: mongoose.Schema.Types.Mixed,
-      default: () => ({}),
-    },
-
     summary: {
       type: String,
       default: "",
     },
 
     experience: {
-      type: [experienceSchema],
+      type: [experienceItemSchema],
       default: [],
     },
 
     education: {
-      type: [educationSchema],
+      type: [educationItemSchema],
       default: [],
     },
 
@@ -112,8 +220,15 @@ const parsedSectionsSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+
+    extraSections: {
+      type: [extraSectionSchema],
+      default: [],
+    },
   },
-  { _id: false },
+  {
+    _id: false,
+  },
 );
 
 const resumeVersionSchema = new mongoose.Schema(
@@ -179,7 +294,4 @@ resumeVersionSchema.index(
   },
 );
 
-module.exports = mongoose.model(
-  "ResumeVersion",
-  resumeVersionSchema,
-);
+module.exports = mongoose.model("ResumeVersion", resumeVersionSchema);

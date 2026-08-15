@@ -1,22 +1,30 @@
-const { GoogleGenAI,Type } = require("@google/genai");
+const { GoogleGenAI, Type } = require("@google/genai");
 const { z } = require("zod");
-const ApiError = require("../utils/ApiError");
-const env = require("../config/env");
+
+const { config: env } = require("../config/env");
 
 const ai = env.geminiApiKey
-  ? new GoogleGemini({ apiKey: env.geminiApiKey })
+  ? new GoogleGenAI({
+      apiKey: env.geminiApiKey,
+    })
   : null;
 
 const linkSchema = {
   type: Type.OBJECT,
+  required: ["label", "url"],
   properties: {
-    level: { type: Type.STRING },
-    url: { type: Type.STRING },
+    label: {
+      type: Type.STRING,
+    },
+    url: {
+      type: Type.STRING,
+    },
   },
 };
 
 const responseSchema = {
   type: Type.OBJECT,
+
   required: [
     "basics",
     "summary",
@@ -27,106 +35,259 @@ const responseSchema = {
     "certifications",
     "languages",
     "interests",
-    "links",
+    "extraSections",
   ],
+
   properties: {
     basics: {
       type: Type.OBJECT,
-      required: ["name", "title", "location", "email", "phone", "link"],
+
+      required: ["name", "title", "location", "email", "phone", "links"],
+
       properties: {
-        name: { type: Type.STRING },
-        title: { type: Type.STRING },
-        location: { type: Type.STRING },
-        email: { type: Type.STRING },
-        phone: { type: Type.STRING },
-        link: { type: Type.STRING },
+        name: {
+          type: Type.STRING,
+        },
+
+        title: {
+          type: Type.STRING,
+        },
+
+        location: {
+          type: Type.STRING,
+        },
+
+        email: {
+          type: Type.STRING,
+        },
+
+        phone: {
+          type: Type.STRING,
+        },
+
+        links: {
+          type: Type.ARRAY,
+          items: linkSchema,
+        },
       },
     },
-    summary: { type: Type.STRING },
+
+    summary: {
+      type: Type.STRING,
+    },
+
     experience: {
       type: Type.ARRAY,
+
       items: {
         type: Type.OBJECT,
-        required: ["company", "role", "period", "bullets"],
-        properties: {
-          company: { type: Type.STRING },
-          role: { type: Type.STRING },
-          period: { type: Type.STRING },
-          bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
-        },
-      },
-    },
-    education: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        required: ["degree", "school", "period"],
+
+        required: ["company", "role", "period", "location", "bullets"],
 
         properties: {
-          degree: { type: Type.STRING },
-          school: { type: Type.STRING },
-          period: { type: Type.STRING },
-          location: { type: Type.STRING },
-          details: { type: Type.STRING },
+          company: {
+            type: Type.STRING,
+          },
+
+          role: {
+            type: Type.STRING,
+          },
+
+          period: {
+            type: Type.STRING,
+          },
+
+          location: {
+            type: Type.STRING,
+          },
+
+          bullets: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+            },
+          },
         },
       },
     },
+
+    education: {
+      type: Type.ARRAY,
+
+      items: {
+        type: Type.OBJECT,
+
+        required: ["degree", "school", "period", "location", "details"],
+
+        properties: {
+          degree: {
+            type: Type.STRING,
+          },
+
+          school: {
+            type: Type.STRING,
+          },
+
+          period: {
+            type: Type.STRING,
+          },
+
+          location: {
+            type: Type.STRING,
+          },
+
+          details: {
+            type: Type.STRING,
+          },
+        },
+      },
+    },
+
     skills: {
       type: Type.ARRAY,
       items: {
-        type: Type.OBJECT,
+        type: Type.STRING,
       },
     },
+
     projects: {
       type: Type.ARRAY,
+
       items: {
         type: Type.OBJECT,
-        required: ["name", "description"],
+
+        required: ["name", "description", "tech", "links", "bullets"],
+
         properties: {
-          name: { type: Type.STRING },
-          description: { type: Type.STRING },
-          tech: { type: Type.ARRAY, items: { type: Type.STRING } },
-          link: { type: Type.STRING, items: linkSchema },
+          name: {
+            type: Type.STRING,
+          },
+
+          description: {
+            type: Type.STRING,
+          },
+
+          tech: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+            },
+          },
+
+          links: {
+            type: Type.ARRAY,
+            items: linkSchema,
+          },
+
+          bullets: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+            },
+          },
         },
       },
     },
+
     certifications: {
       type: Type.ARRAY,
+
       items: {
         type: Type.OBJECT,
-        required: ["name"],
+
+        required: ["name", "issuer", "year"],
+
         properties: {
-          name: { type: Type.STRING },
-          issuer: { type: Type.STRING },
-          year: { type: Type.STRING },
+          name: {
+            type: Type.STRING,
+          },
+
+          issuer: {
+            type: Type.STRING,
+          },
+
+          year: {
+            type: Type.STRING,
+          },
         },
       },
     },
-    languages: { type: Type.ARRAY, items: { type: Type.STRING } },
-    interests: { type: Type.ARRAY, items: { type: Type.STRING } },
+
+    languages: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.STRING,
+      },
+    },
+
+    interests: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.STRING,
+      },
+    },
+
+    extraSections: {
+      type: Type.ARRAY,
+
+      items: {
+        type: Type.OBJECT,
+
+        required: ["title", "items"],
+
+        properties: {
+          title: {
+            type: Type.STRING,
+          },
+
+          items: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+            },
+          },
+        },
+      },
+    },
   },
 };
 
 const validator = z.object({
   basics: z.object({
-    name: z.string(),
-    title: z.string(),
-    location: z.string(),
-    email: z.string().email(),
-    phone: z.string(),
-    link: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
+    name: z.string().default(""),
+
+    title: z.string().default(""),
+
+    location: z.string().default(""),
+
+    email: z.string().default(""),
+
+    phone: z.string().default(""),
+
+    links: z
+      .array(
+        z.object({
+          label: z.string().default(""),
+          url: z.string().default(""),
+        }),
+      )
+      .default([]),
   }),
+
   summary: z.string().default(""),
+
   experience: z
     .array(
       z.object({
         company: z.string().default(""),
         role: z.string().default(""),
         period: z.string().default(""),
+        location: z.string().default(""),
         bullets: z.array(z.string()).default([]),
       }),
     )
     .default([]),
+
   education: z
     .array(
       z.object({
@@ -138,17 +299,32 @@ const validator = z.object({
       }),
     )
     .default([]),
+
   skills: z.array(z.string()).default([]),
-  projects: z.array(
-    z.object({
-      name: z.string().default(""),
-      description: z.string().default(""),
-      tech: z.array(z.string()).default([]),
-      link: z
-        .array(z.object({ label: z.string(), url: z.string() }))
-        .default([]),
-    }),
-  ),
+
+  projects: z
+    .array(
+      z.object({
+        name: z.string().default(""),
+
+        description: z.string().default(""),
+
+        tech: z.array(z.string()).default([]),
+
+        links: z
+          .array(
+            z.object({
+              label: z.string().default(""),
+              url: z.string().default(""),
+            }),
+          )
+          .default([]),
+
+        bullets: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+
   certifications: z
     .array(
       z.object({
@@ -158,30 +334,124 @@ const validator = z.object({
       }),
     )
     .default([]),
+
   languages: z.array(z.string()).default([]),
+
   interests: z.array(z.string()).default([]),
+
+  extraSections: z
+    .array(
+      z.object({
+        title: z.string(),
+        items: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
 });
 
 function buildPrompt(rawText) {
   return [
-    "You are a resume parser. The input is text extracted from a PDF - lines may be jumbled or out of natural reading order.",
+    "You are a resume parser.",
+    "The input is raw text extracted from a PDF, so some lines may be broken or slightly out of order.",
+
     "",
-    "Extract structured data:",
-    '-Basics: name, professional title, location, email, phone, social links (LinkedIn/ GitHub/ portfolio etc.; label like "LinkedIn",full URL)',
-    "-Summary: the professional summary paragraph (rejoin if split across lines)",
-    "-Experience: jobs most recent first, each with company, role, period(preserve original date formate), location if available,  and bullet points",
-    "-Education: degree, school, period, location, optional details",
-    "-Skills: flat array of technical skills",
-    "-Projects: name, one sentence description, optional tech tags, optional links",
-    "-Certifications: name, issuer, year",
-    "-Languages: flat array",
-    "-Interests: flat array",
+
+    "Extract the resume into the exact structured JSON schema provided.",
+
     "",
-    "Rules:",
-    "- Be conservative: omit fields that are not clearly present. Use empty strings/arrays where missing",
-    "- Each experience bullet should read as a complete sentence, even if the original text is fragmented",
-    "- Preserve original date formats (e.g., 'Jan 2020 - May 2019').",
+
+    "BASICS:",
+    "- Extract candidate name.",
+    "- Extract professional/job title.",
+    "- Extract location, email, phone.",
+    "- Extract LinkedIn, GitHub, portfolio, website, or other profile URLs into links.",
+    '- Each link must contain a label such as "LinkedIn", "GitHub", "Portfolio", or "Website".',
+
     "",
+
+    "SUMMARY:",
+    "- Extract the professional summary/profile.",
+    "- Join lines that belong to the same paragraph.",
+
+    "",
+
+    "EXPERIENCE:",
+    "- Extract every work experience entry.",
+    "- Include role, company, date period, location, and bullet points.",
+    "- Keep original date wording whenever possible.",
+    "- Do not invent work experience if none exists.",
+
+    "",
+
+    "EDUCATION:",
+    "- Extract every degree and institution.",
+    "- Include period and location only when clearly present.",
+    "- If something is missing, use an empty string.",
+
+    "",
+
+    "SKILLS:",
+    "- Extract individual technical or professional skills as a flat array.",
+    "- If the resume groups skills as Frontend, Backend, Database, Deployment, Tools, Cloud, etc., extract the individual skills.",
+    "- Do not lose any clearly stated skill.",
+
+    "",
+
+    "PROJECTS:",
+    "- Extract EVERY project separately.",
+    "- Preserve the exact project name.",
+    "- Extract the project URL when it is explicitly present.",
+    "- Put all project URLs inside links as { label, url }.",
+    "- Extract all technologies into tech.",
+    "- Preserve EVERY meaningful project bullet.",
+    "- Each source bullet must become a separate item inside bullets.",
+    "- Never merge multiple bullets into description.",
+    "- Never discard project bullets.",
+    "- Do not summarize several bullets into one bullet.",
+    "- description should only contain a short project overview if one is actually present.",
+    "- If the source has no standalone description, description may be empty.",
+    "- Symbols such as •, , , -, * can all indicate bullets.",
+
+    "- CRITICAL: A project with 4 source bullets should normally return 4 bullets.",
+    "- Do not replace source project bullets with a single generated summary.",
+    "CERTIFICATIONS / PROFESSIONAL TRAINING:",
+    "- Extract courses, certifications, and professional training.",
+    "- Use certifications for professional training items too.",
+    "- Extract issuer and year when available.",
+
+    "",
+
+    "LANGUAGES:",
+    "- Extract spoken/written languages when present.",
+
+    "",
+
+    "INTERESTS:",
+    "- Extract interests/hobbies when present.",
+
+    "",
+
+    "EXTRA SECTIONS:",
+    "- Preserve any meaningful resume section that does not fit the standard fields.",
+    "- Put those sections in extraSections.",
+    "- Examples include Achievements, Awards, Publications, Research, Volunteer Experience, Activities, References, Courses, Career Objective, Additional Information, Memberships.",
+    "- Each extra section must have its original meaningful title and an array of text items.",
+    "- Never silently discard a section.",
+
+    "",
+
+    "IMPORTANT RULES:",
+    "- Do not invent facts.",
+    "- Preserve all meaningful resume content.",
+    "- Use empty strings or arrays when information is not present.",
+    "- Do not create sections that are not supported by the source resume.",
+    "- PDF extraction may scramble heading order; use context.",
+    "- Preserve ATS-friendly plain text wording.",
+    "- Return JSON only.",
+    "- Do not return markdown.",
+
+    "",
+
     "RESUME TEXT",
     "-------------",
     rawText,
@@ -198,43 +468,98 @@ const EMPTY = {
     phone: "",
     links: [],
   },
+
   summary: "",
+
   experience: [],
+
   education: [],
+
   skills: [],
+
   projects: [],
+
   certifications: [],
-  language: [],
+
+  languages: [],
+
   interests: [],
+
+  extraSections: [],
 };
 
 async function parseResume(rawText) {
-  if (!ai || !rawText?.trim()) return EMPTY;
+  if (!rawText?.trim()) {
+    return EMPTY;
+  }
+
+  if (!ai) {
+    console.error("Structure parser: Gemini API key is not configured.");
+
+    return EMPTY;
+  }
+
   const prompt = buildPrompt(rawText);
-  for (let atempt = 1; atempt <= 3; atempt++) {
+
+  let lastError;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const result = await ai.models.generateContext({
+      const result = await ai.models.generateContent({
         model: env.geminiModel,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+
         config: {
           responseMimeType: "application/json",
+
           responseSchema,
+
           temperature: 0.1,
         },
       });
+
       const text =
         typeof result.text === "function" ? result.text() : result.text;
-      if (!text) throw new Error("Empty response");
+
+      if (!text) {
+        throw new Error("Empty response from Gemini");
+      }
+
       const parsed = JSON.parse(text);
+
       return validator.parse(parsed);
     } catch (error) {
-      if (atemppt === 2) {
-        console.error("Structured parse failed:", error.message);
+      lastError = error;
+
+      console.error(
+        `Structured parse attempt ${attempt} failed:`,
+        error.message,
+      );
+
+      if (attempt === 3) {
+        console.error(
+          "Structured parse failed after 3 attempts:",
+          lastError.message,
+        );
+
         return EMPTY;
       }
     }
   }
+
   return EMPTY;
 }
 
-module.exports = { parseResume };
+module.exports = {
+  parseResume,
+};
